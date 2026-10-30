@@ -18,4 +18,6 @@ web/.next/
 *.key
 *.mobileprovision
 .DS_Store
+.vercel
+web/.vercel
 npm-debug.log*
