@@ -15,7 +15,7 @@ export function incidentLabel(id: string) {
 export type IncidentStatus = "saved" | "prepared" | "shared";
 export type EntryKind = "words" | "signal" | "file";
 export type SignalSource = "gemini" | "phone";
-export type SignalLabel = "threat" | "coercion" | "sexual harassment" | "repeated contact";
+export type SignalLabel = "threat" | "sexual violence" | "coercion" | "sexual harassment" | "repeated contact";
 
 export type Incident = {
   id: string;

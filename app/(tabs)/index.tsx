@@ -15,7 +15,6 @@ export default function Home() {
   const { colors } = useApp();
   const { user } = useSession();
   const { incidents, ready } = useRecords();
-  const latest = incidents[0];
   const name = user?.displayName || "there";
   const initials = name
     .split(" ")
@@ -50,24 +49,23 @@ export default function Home() {
         <T variant="caption" color={colors.muted}>
           Loading records.
         </T>
-      ) : latest ? (
-        <PressableScale quiet accessibilityLabel="Open latest incident" onPress={() => router.push(`/incident/${latest.id}`)}>
-          <Glass>
-            {latest.sample ? (
-              <T variant="caption" color={colors.muted}>
-                Sample. Not a real person.
-              </T>
-            ) : null}
-            <T variant="h2">{incidentLabel(latest.type)}</T>
-            <T variant="body">{latest.summary}</T>
-            <T variant="caption" color={colors.muted}>
-              {latest.platform}
-            </T>
-            <T variant="caption" color={colors.muted}>
-              {latest.occurredAt}
-            </T>
-          </Glass>
-        </PressableScale>
+      ) : incidents.length ? (
+        <View style={{ gap: space[3] }}>
+          <T variant="caption" color={colors.muted}>
+            Sample file. Not a real person. The pattern is real: threats, image abuse, stalking, and posts of private details.
+          </T>
+          {incidents.slice(0, 4).map((item) => (
+            <PressableScale key={item.id} quiet accessibilityLabel={item.summary} onPress={() => router.push(`/incident/${item.id}`)}>
+              <Glass>
+                <T variant="h2">{incidentLabel(item.type)}</T>
+                <T variant="body">{item.summary}</T>
+                <T variant="caption" color={colors.muted}>{item.platform}</T>
+                <T variant="caption" color={colors.muted}>{item.occurredAt}</T>
+                <T variant="caption" color={colors.accent}>{item.status}</T>
+              </Glass>
+            </PressableScale>
+          ))}
+        </View>
       ) : (
         <Glass>
           <T variant="body">No incident saved. When you are ready, start a record.</T>

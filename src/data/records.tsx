@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -16,6 +17,14 @@ import {
   setIncidentStatus,
 } from "./api";
 import { db } from "./firebase";
+import {
+  addPhonePhoto,
+  loadPhone,
+  markPhoneRead,
+  savePhoneIncident,
+  setPhoneStatus,
+  type PhoneBox,
+} from "./local";
 import { useSession } from "./session";
 import type { Entry, Incident, IncidentStatus, NewIncident, Notice } from "./types";
 
@@ -60,17 +69,41 @@ function mapNotice(id: string, data: Record<string, unknown>): Notice {
 }
 
 export function RecordsProvider({ children }: { children: ReactNode }) {
-  const { user } = useSession();
+  const { user, onPhone } = useSession();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [ready, setReady] = useState(false);
+  const phone = useRef<PhoneBox | null>(null);
+
+  const show = (box: PhoneBox) => {
+    phone.current = box;
+    setIncidents([...box.incidents].sort((a, b) => b.updatedAt - a.updatedAt));
+    setNotices([...box.notices].sort((a, b) => b.createdAt - a.createdAt));
+  };
 
   useEffect(() => {
-    if (!db || !user) {
+    if (!user) {
       setIncidents([]);
       setNotices([]);
       setReady(true);
       return;
+    }
+    if (onPhone || !db) {
+      let alive = true;
+      setReady(false);
+      loadPhone()
+        .then((box) => {
+          if (alive) {
+            show(box);
+            setReady(true);
+          }
+        })
+        .catch(() => {
+          if (alive) setReady(true);
+        });
+      return () => {
+        alive = false;
+      };
     }
     setReady(false);
     const store = db;
@@ -104,7 +137,7 @@ export function RecordsProvider({ children }: { children: ReactNode }) {
       stopIncidents();
       stopNotices();
     };
-  }, [user]);
+  }, [user, onPhone]);
 
   const value = useMemo<RecordsState>(
     () => ({
@@ -112,27 +145,48 @@ export function RecordsProvider({ children }: { children: ReactNode }) {
       notices,
       ready,
       async saveIncident(input) {
-        if (!db || !user) throw new Error("Firebase is not connected yet.");
+        if (onPhone || !db) {
+          if (!user) throw new Error("Open the demo first.");
+          const current = phone.current ?? (await loadPhone());
+          const saved = await savePhoneIncident(current, user.uid, input);
+          show(saved.box);
+          return saved.id;
+        }
+        if (!user) throw new Error("Open the demo first.");
         return createIncident(db, user.uid, input);
       },
       async setStatus(incident, status) {
-        if (!db) throw new Error("Firebase is not connected yet.");
+        if (onPhone || !db) {
+          const current = phone.current ?? (await loadPhone());
+          show(await setPhoneStatus(current, incident.id, status));
+          return;
+        }
         await setIncidentStatus(db, incident, status);
       },
       async addPhoto(incidentId, uri) {
-        if (!db || !user) throw new Error("Firebase is not connected yet.");
+        if (onPhone || !db) {
+          const current = phone.current ?? (await loadPhone());
+          show(await addPhonePhoto(current, incidentId, uri));
+          return;
+        }
+        if (!user) throw new Error("Open the demo first.");
         await attachPhoto(db, user.uid, incidentId, uri);
       },
       async markRead(notice) {
-        if (!db || !user) return;
+        if (onPhone || !db) {
+          const current = phone.current ?? (await loadPhone());
+          show(await markPhoneRead(current, notice.id));
+          return;
+        }
+        if (!user) return;
         await markNoticeRead(db, user.uid, notice);
       },
       entriesFor(incidentId) {
-        if (!db) return Promise.resolve([]);
+        if (onPhone || !db) return Promise.resolve(phone.current?.entries[incidentId] ?? []);
         return listEntries(db, incidentId);
       },
     }),
-    [incidents, notices, ready, user],
+    [incidents, notices, ready, user, onPhone],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -10,7 +10,7 @@ import { space } from "@/src/theme/tokens";
 export default function Welcome() {
   const router = useRouter();
   const { colors } = useApp();
-  const { signInDemo, configured } = useSession();
+  const { signInDemo } = useSession();
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -32,7 +32,7 @@ export default function Welcome() {
       exit={false}
       footer={
         <View style={{ gap: space[2] }}>
-          <Button label={busy ? "Opening" : "Open demo"} disabled={busy || !configured} onPress={openDemo} />
+          <Button label={busy ? "Opening" : "Open demo"} disabled={busy} onPress={openDemo} />
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <PressableScale quiet accessibilityLabel="Log in" onPress={() => router.push("/login")} style={{ minHeight: 44, justifyContent: "center" }}>
               <T variant="label" color={colors.accent}>Log in</T>
@@ -53,11 +53,6 @@ export default function Welcome() {
           Save what happened. See the pattern. Choose the next step. Nothing is sent unless you send it.
         </T>
         <ErrorSummary items={errors} />
-        {!configured ? (
-          <T variant="caption" color={colors.muted}>
-            Firebase is not connected yet.
-          </T>
-        ) : null}
       </View>
     </Screen>
   );
