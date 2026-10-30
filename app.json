@@ -5,28 +5,53 @@
     "scheme": "safestep",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "backgroundColor": "#21105D",
+    "backgroundColor": "#080a06",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.safestep.app"
     },
     "android": {
       "package": "com.safestep.app",
-      "backgroundColor": "#21105D"
+      "backgroundColor": "#080a06",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#080a06"
+      }
     },
     "web": {
       "bundler": "metro",
       "output": "single",
-      "backgroundColor": "#F8F9FF"
+      "backgroundColor": "#080a06",
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-router",
       "expo-font",
       "expo-image",
-      "expo-splash-screen",
-      "expo-status-bar"
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#080a06",
+          "image": "./assets/icon.png",
+          "imageWidth": 160
+        }
+      ],
+      "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "SafeStep attaches a screenshot you choose. Do not add intimate images."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1F6F62"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false

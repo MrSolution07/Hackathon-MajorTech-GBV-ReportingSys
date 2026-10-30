@@ -1,87 +1,76 @@
 import { useState } from "react";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
-import { AppleLogo, EnvelopeSimple, GoogleLogo, LockSimple } from "phosphor-react-native";
-import { BrandMark } from "@/src/components/chrome";
+import { Header } from "@/src/components/chrome";
 import { Button, ErrorSummary, Field, PressableScale, Screen, T } from "@/src/components/primitives";
+import { errorText } from "@/src/data/errors";
+import { useSession } from "@/src/data/session";
 import { useApp } from "@/src/theme/Theme";
 import { space } from "@/src/theme/tokens";
 
 export default function Login() {
   const router = useRouter();
   const { colors } = useApp();
-  const [id, setId] = useState("");
+  const { signIn, sendReset } = useSession();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const submit = () => {
-    const next: string[] = [];
-    if (!id.trim()) next.push("Enter an email or phone number.");
-    if (!password) next.push("Enter your password.");
+  const submit = async () => {
+    const next = [];
+    if (!email.includes("@")) next.push("Enter an email.");
+    if (password.length < 8) next.push("Use at least 8 characters.");
     setErrors(next);
-    if (!next.length) router.replace("/(tabs)");
+    setNote("");
+    if (next.length) return;
+    setBusy(true);
+    try {
+      await signIn(email, password);
+      router.replace("/(tabs)");
+    } catch (error) {
+      setErrors([errorText(error)]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const reset = async () => {
+    if (!email.includes("@")) {
+      setErrors(["Enter the email first."]);
+      return;
+    }
+    setBusy(true);
+    setErrors([]);
+    try {
+      await sendReset(email);
+      setNote("If that account exists, a reset link is on its way.");
+    } catch (error) {
+      const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
+      if (code === "auth/user-not-found") setNote("If that account exists, a reset link is on its way.");
+      else setErrors([errorText(error)]);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
-    <Screen tone="canvas">
-      <View style={{ alignItems: "center", gap: space[2], paddingTop: space[6], marginBottom: space[5] }}>
-        <BrandMark compact />
-        <T variant="title" color={colors.ink} center accessibilityRole="header">
-          SafeStep
-        </T>
-        <T variant="body" color={colors.muted} center>
-          Log in to continue
-        </T>
-      </View>
-      <View style={{ gap: space[4] }}>
-        <ErrorSummary items={errors} />
-        <Field
-          label="Email or phone number"
-          placeholder="Email or phone number"
-          value={id}
-          onChangeText={setId}
-          autoComplete="username"
-          textContentType="username"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          icon={<EnvelopeSimple size={20} color={colors.ink} weight="regular" />}
-          error={errors.find((item) => item.includes("email"))}
-        />
-        <Field
-          label="Password"
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secure
-          autoComplete="current-password"
-          textContentType="password"
-          icon={<LockSimple size={20} color={colors.ink} weight="regular" />}
-          error={errors.find((item) => item.includes("password"))}
-        />
-        <Button label="Log In" onPress={submit} />
-        <PressableScale quiet accessibilityLabel="Forgot password?" onPress={() => router.push("/info?kind=forgot")} style={{ minHeight: 44, justifyContent: "center" }}>
-          <T variant="label" color={colors.cta} center>
-            Forgot password?
+    <Screen exit={false} footer={<Button label={busy ? "Checking" : "Log in"} disabled={busy} onPress={submit} />}>
+      <Header title="Log in" />
+      <ErrorSummary items={errors} />
+      <View style={{ gap: space[4], marginTop: space[4] }}>
+        <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+        <Field label="Password" value={password} onChangeText={setPassword} secure />
+        <PressableScale quiet accessibilityLabel="Email a reset link" onPress={reset} style={{ minHeight: 44, justifyContent: "center" }}>
+          <T variant="caption" color={colors.accent}>
+            Email a reset link
           </T>
         </PressableScale>
-        <T variant="caption" color={colors.muted} center>
-          or
-        </T>
-        <Button
-          variant="outline"
-          label="Continue with Google"
-          icon={<GoogleLogo size={20} color={colors.ink} weight="regular" />}
-          onPress={() => router.replace("/(tabs)")}
-        />
-        <Button
-          variant="outline"
-          label="Continue with Apple"
-          icon={<AppleLogo size={20} color={colors.ink} weight="regular" />}
-          onPress={() => router.replace("/(tabs)")}
-        />
-        <PressableScale quiet accessibilityLabel="Sign up" onPress={() => router.push("/signup")} style={{ minHeight: 44, justifyContent: "center" }}>
-          <T variant="label" color={colors.muted} center>
-            Don’t have an account? <T variant="label" color={colors.cta}>Sign Up</T>
+        {note ? <T variant="caption">{note}</T> : null}
+        <PressableScale quiet accessibilityLabel="Create account" onPress={() => router.push("/signup")} style={{ minHeight: 44, justifyContent: "center" }}>
+          <T variant="caption" color={colors.muted}>
+            Create account
           </T>
         </PressableScale>
       </View>

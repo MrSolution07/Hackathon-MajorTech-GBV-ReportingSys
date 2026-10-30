@@ -1,39 +1,28 @@
+import { useEffect } from "react";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowRight } from "phosphor-react-native";
 import { BrandMark } from "@/src/components/chrome";
-import { Button, PressableScale, Screen, T } from "@/src/components/primitives";
+import { Screen, T } from "@/src/components/primitives";
+import { useSession } from "@/src/data/session";
 import { space } from "@/src/theme/tokens";
 
-export default function Splash() {
+export default function Gate() {
+  const { ready, user } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!ready) return;
+    router.replace(user ? "/(tabs)" : "/welcome");
+  }, [ready, user, router]);
+
   return (
-    <Screen
-      tone="brand"
-      footer={
-        <View style={{ gap: space[2] }}>
-          <Button
-            variant="inverse"
-            label="Get Started"
-            icon={<ArrowRight size={20} color="#5930C5" weight="bold" />}
-            onPress={() => router.push("/welcome")}
-          />
-          <PressableScale quiet accessibilityLabel="Log in" onPress={() => router.push("/login")} style={{ minHeight: 44, justifyContent: "center" }}>
-            <T variant="caption" color="#FFFFFF" center>
-              Already have an account? Log In
-            </T>
-          </PressableScale>
-        </View>
-      }
-    >
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: space[3], minHeight: 420 }}>
-        <BrandMark light />
-        <T variant="splash" color="#FFFFFF" center accessibilityRole="header">
+    <Screen exit={false}>
+      <View style={{ flex: 1, justifyContent: "center", gap: space[3], minHeight: 420 }}>
+        <BrandMark />
+        <T variant="splash" accessibilityRole="header">
           SafeStep
         </T>
-        <T variant="body" color="#FFFFFF" center>
-          Walk your route,{"\n"}not your fear.
-        </T>
+        <T variant="body">The file still exists on Monday.</T>
       </View>
     </Screen>
   );

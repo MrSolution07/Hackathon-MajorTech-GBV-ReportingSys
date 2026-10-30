@@ -1,66 +1,91 @@
-import { useState } from "react";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
-import { MagnifyingGlass, ShieldCheck, X } from "phosphor-react-native";
-import { Avatar, Card } from "@/src/components/chrome";
-import { MapArt } from "@/src/components/MapArt";
-import { Button, hitSize, PressableScale, Screen, T } from "@/src/components/primitives";
+import * as Haptics from "expo-haptics";
+import { Glass } from "@/src/components/Glass";
+import { Avatar } from "@/src/components/chrome";
+import { Button, PressableScale, Screen, T } from "@/src/components/primitives";
+import { incidentLabel } from "@/src/data/types";
+import { useRecords } from "@/src/data/records";
+import { useSession } from "@/src/data/session";
 import { useApp } from "@/src/theme/Theme";
-import { radius, space } from "@/src/theme/tokens";
-import { TextInput } from "react-native";
+import { space } from "@/src/theme/tokens";
 
 export default function Home() {
   const router = useRouter();
   const { colors } = useApp();
-  const [query, setQuery] = useState("");
+  const { user } = useSession();
+  const { incidents, ready } = useRecords();
+  const latest = incidents[0];
+  const name = user?.displayName || "there";
+  const initials = name
+    .split(" ")
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+
   return (
-    <Screen tabbed footer={<Button label="Start Navigation" onPress={() => router.push("/route")} />}>
+    <Screen
+      tabbed
+      footer={<Button label="New incident" onPress={() => router.push("/create-report")} />}
+    >
       <PressableScale
         quiet
-        accessibilityLabel="Open profile for Nomsa Dlamini"
+        accessibilityLabel="Open profile"
         onPress={() => router.push("/profile")}
-        style={{ flexDirection: "row", alignItems: "center", gap: space[3], minHeight: hitSize, marginBottom: space[4] }}
+        style={{ flexDirection: "row", alignItems: "center", gap: space[3], minHeight: 44, marginBottom: space[5] }}
       >
-        <Avatar initials="ND" />
+        <Avatar initials={initials || "S"} />
         <View>
-          <T variant="label" color={colors.ink}>Hello, Thandi</T>
-          <T variant="caption" color={colors.muted}>You’re safe with SafeStep</T>
+          <T variant="label">{name}</T>
+          <T variant="caption" color={colors.muted}>
+            Your records stay on this account.
+          </T>
         </View>
       </PressableScale>
-      <View style={{ gap: space[3] }}>
-        <View style={{ minHeight: 52, borderRadius: radius.input, borderWidth: 1.5, borderColor: colors.fieldBorder, backgroundColor: colors.card, flexDirection: "row", alignItems: "center", paddingLeft: space[4] }}>
-          <MagnifyingGlass size={20} color={colors.ink} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search destination..."
-            placeholderTextColor={colors.placeholder}
-            accessibilityLabel="Search destination"
-            style={{ flex: 1, fontFamily: "Inter_400Regular", fontSize: 16, color: colors.text, paddingHorizontal: space[3], paddingVertical: 12 }}
-          />
-          {query ? (
-            <PressableScale quiet accessibilityLabel="Clear search" onPress={() => setQuery("")} hitSlop={8} style={{ width: hitSize, height: hitSize, alignItems: "center", justifyContent: "center" }}>
-              <X size={18} color={colors.ink} />
-            </PressableScale>
-          ) : null}
-        </View>
-        {query.length > 0 ? (
-          <Card>
-            <T variant="label">Rosebank</T>
-            <T variant="caption" color={colors.muted}>Suggested stop • low risk</T>
-          </Card>
-        ) : null}
-        <MapArt height={320} />
-        <Card>
-          <View style={{ flexDirection: "row", gap: space[3], alignItems: "center" }}>
-            <ShieldCheck size={28} color={colors.cta} weight="duotone" />
-            <View style={{ flex: 1 }}>
-              <T variant="label" color={colors.ink}>Safe Route</T>
-              <T variant="caption" color={colors.muted}>Low risk • 12 min • 3.2 km</T>
-            </View>
-          </View>
-        </Card>
-      </View>
+      <T variant="title" accessibilityRole="header">
+        The file still exists on Monday.
+      </T>
+      <View style={{ height: space[5] }} />
+      {!ready ? (
+        <T variant="caption" color={colors.muted}>
+          Loading records.
+        </T>
+      ) : latest ? (
+        <PressableScale quiet accessibilityLabel="Open latest incident" onPress={() => router.push(`/incident/${latest.id}`)}>
+          <Glass>
+            {latest.sample ? (
+              <T variant="caption" color={colors.muted}>
+                Sample. Not a real person.
+              </T>
+            ) : null}
+            <T variant="h2">{incidentLabel(latest.type)}</T>
+            <T variant="body">{latest.summary}</T>
+            <T variant="caption" color={colors.muted}>
+              {latest.platform}
+            </T>
+            <T variant="caption" color={colors.muted}>
+              {latest.occurredAt}
+            </T>
+          </Glass>
+        </PressableScale>
+      ) : (
+        <Glass>
+          <T variant="body">No incident saved. When you are ready, start a record.</T>
+        </Glass>
+      )}
+      <PressableScale
+        quiet
+        accessibilityLabel="Emergency numbers"
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+          router.push("/sos");
+        }}
+        style={{ minHeight: 48, justifyContent: "center", marginTop: space[4] }}
+      >
+        <T variant="label" color={colors.danger}>
+          Emergency numbers
+        </T>
+      </PressableScale>
     </Screen>
   );
 }

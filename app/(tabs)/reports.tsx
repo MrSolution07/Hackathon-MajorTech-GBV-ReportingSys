@@ -1,62 +1,52 @@
-import { useState } from "react";
-import { View } from "react-native";
+import { Linking, View } from "react-native";
 import { useRouter } from "expo-router";
-import { CheckCircle, Flag, Lightbulb, Warning } from "phosphor-react-native";
-import { Chip, Empty } from "@/src/components/chrome";
-import { ListRow } from "@/src/components/chrome";
-import { PressableScale, Screen, T } from "@/src/components/primitives";
-import { reports } from "@/src/data/fixtures";
+import { Glass } from "@/src/components/Glass";
+import { Header } from "@/src/components/chrome";
+import { Button, PressableScale, Screen, T } from "@/src/components/primitives";
+import { incidentLabel } from "@/src/data/types";
+import { useRecords } from "@/src/data/records";
 import { useApp } from "@/src/theme/Theme";
 import { space } from "@/src/theme/tokens";
 
-const filters = ["All", "Resolved", "In Progress"] as const;
-
-function iconFor(type: string, color: string) {
-  if (type === "Unsafe Spot") return <Warning size={22} color={color} />;
-  if (type === "Broken Streetlight") return <Lightbulb size={22} color={color} />;
-  return <Flag size={22} color={color} />;
-}
-
-export default function Reports() {
+export default function Records() {
   const router = useRouter();
   const { colors } = useApp();
-  const [filter, setFilter] = useState<(typeof filters)[number]>("All");
-  const rows = reports.filter((item) => (filter === "All" ? true : item.status === filter));
-
+  const { incidents, ready } = useRecords();
   return (
-    <Screen tabbed>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: space[4] }}>
-        <T variant="h2" color={colors.ink} accessibilityRole="header">My Reports</T>
-        <PressableScale quiet accessibilityLabel="New report" onPress={() => router.push("/create-report")} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: space[2] }}>
-          <T variant="label" color={colors.cta}>New report</T>
-        </PressableScale>
-      </View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space[2], marginBottom: space[4] }}>
-        {filters.map((item) => (
-          <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
-        ))}
-      </View>
-      {rows.length === 0 ? <Empty title="No reports in this filter." /> : null}
-      {rows.map((item) => (
-        <ListRow
-          key={item.id}
-          icon={iconFor(item.type, colors.cta)}
-          title={item.type}
-          subtitle={item.when}
-          trailing={
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, maxWidth: 110 }}>
-              {item.status === "Resolved" ? (
-                <CheckCircle size={16} color={colors.success} weight="fill" />
-              ) : (
-                <Warning size={16} color={colors.cta} weight="fill" />
-              )}
-              <T variant="caption" color={item.status === "Resolved" ? colors.success : colors.cta}>
+    <Screen tabbed footer={<Button label="New incident" onPress={() => router.push("/create-report")} />}>
+      <Header title="Records" back={false} />
+      {!ready ? <T variant="caption" color={colors.muted}>Loading records.</T> : null}
+      {ready && incidents.length === 0 ? (
+        <Glass>
+          <T variant="body">No incidents yet. The first one you save stays on this account.</T>
+        </Glass>
+      ) : null}
+      <View style={{ gap: space[3] }}>
+        {incidents.map((item) => (
+          <PressableScale key={item.id} quiet accessibilityLabel={item.summary} onPress={() => router.push(`/incident/${item.id}`)}>
+            <Glass>
+              <T variant="label">{incidentLabel(item.type)}</T>
+              <T variant="body">{item.summary}</T>
+              <T variant="caption" color={colors.muted}>
                 {item.status}
               </T>
-            </View>
-          }
-        />
-      ))}
+              <T variant="caption" color={colors.muted}>
+                {item.platform}
+              </T>
+            </Glass>
+          </PressableScale>
+        ))}
+      </View>
+      <PressableScale
+        quiet
+        accessibilityLabel="How StopNCII works"
+        onPress={() => Linking.openURL("https://stopncii.org/")}
+        style={{ minHeight: 44, justifyContent: "center", marginTop: space[4] }}
+      >
+        <T variant="caption" color={colors.accent}>
+          Intimate images: StopNCII.org, not this app.
+        </T>
+      </PressableScale>
     </Screen>
   );
 }

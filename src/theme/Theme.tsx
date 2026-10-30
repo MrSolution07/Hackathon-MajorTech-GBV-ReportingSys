@@ -25,7 +25,7 @@ const Ctx = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const system = useColorScheme();
-  const [pref, setPref] = useState<SchemePref>("system");
+  const [pref, setPref] = useState<SchemePref>("light");
   const [reduceMotion, setReduceMotion] = useState(false);
   const [language, setLanguage] = useState("English");
 

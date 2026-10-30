@@ -1,50 +1,50 @@
-import { useState } from "react";
-import { TextInput, View } from "react-native";
-import { useRouter } from "expo-router";
-import { MagnifyingGlass, ShieldCheck, X } from "phosphor-react-native";
-import { Card } from "@/src/components/chrome";
-import { MapArt } from "@/src/components/MapArt";
-import { Button, hitSize, PressableScale, Screen, T } from "@/src/components/primitives";
+import { Linking, View } from "react-native";
+import { Glass } from "@/src/components/Glass";
+import { SupportMap } from "@/src/components/SupportMap";
+import { Header } from "@/src/components/chrome";
+import { PressableScale, Screen, T } from "@/src/components/primitives";
+import { lines, places } from "@/src/data/helplines";
 import { useApp } from "@/src/theme/Theme";
-import { radius, space } from "@/src/theme/tokens";
+import { space } from "@/src/theme/tokens";
 
 export default function MapScreen() {
-  const router = useRouter();
   const { colors } = useApp();
-  const [query, setQuery] = useState("");
   return (
-    <Screen tabbed padded={false} footer={<View style={{ paddingHorizontal: 0 }}><Button label="Start Navigation" onPress={() => router.push("/route")} /></View>}>
-      <View style={{ paddingHorizontal: space[5], paddingTop: space[3], gap: space[3] }}>
-        <T variant="h2" color={colors.ink} accessibilityRole="header">Map</T>
-        <View style={{ minHeight: 52, borderRadius: radius.input, borderWidth: 1.5, borderColor: colors.fieldBorder, backgroundColor: colors.card, flexDirection: "row", alignItems: "center", paddingLeft: space[4] }}>
-          <MagnifyingGlass size={20} color={colors.ink} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search destination..."
-            placeholderTextColor={colors.placeholder}
-            accessibilityLabel="Search destination"
-            autoFocus={false}
-            style={{ flex: 1, fontFamily: "Inter_400Regular", fontSize: 16, color: colors.text, paddingHorizontal: space[3], paddingVertical: 12 }}
-          />
-          {query ? (
-            <PressableScale quiet accessibilityLabel="Clear search" onPress={() => setQuery("")} style={{ width: hitSize, height: hitSize, alignItems: "center", justifyContent: "center" }}>
-              <X size={18} color={colors.ink} />
-            </PressableScale>
-          ) : null}
-        </View>
+    <Screen tabbed padded={false}>
+      <View style={{ paddingHorizontal: space[5], paddingTop: space[2] }}>
+        <Header title="Support" back={false} />
+        <T variant="body" color={colors.muted}>
+          Two offices with a published address. National lines stay as calls, not pins.
+        </T>
       </View>
-      <View style={{ flex: 1, padding: space[5], gap: space[3] }}>
-        <MapArt height={420} />
-        <Card>
-          <View style={{ flexDirection: "row", gap: space[3], alignItems: "center" }}>
-            <ShieldCheck size={28} color={colors.cta} weight="duotone" />
-            <View>
-              <T variant="label" color={colors.ink}>Safe Route</T>
-              <T variant="caption" color={colors.muted}>Low risk • 12 min • 3.2 km</T>
-            </View>
-          </View>
-        </Card>
+      <View style={{ padding: space[5], gap: space[3] }}>
+        <SupportMap pins={places} height={320} />
+        {places.map((place) => (
+          <Glass key={place.id}>
+            <T variant="label">{place.name}</T>
+            <T variant="body">{place.detail}</T>
+            <PressableScale quiet accessibilityLabel={`Call ${place.name}`} onPress={() => Linking.openURL(place.tel)} style={{ minHeight: 44, justifyContent: "center" }}>
+              <T variant="label" color={colors.accent}>
+                {place.phone}
+              </T>
+            </PressableScale>
+            <PressableScale quiet accessibilityLabel={place.sourceLabel} onPress={() => Linking.openURL(place.source)} style={{ minHeight: 44, justifyContent: "center" }}>
+              <T variant="caption" color={colors.muted}>
+                {place.sourceLabel}
+              </T>
+            </PressableScale>
+          </Glass>
+        ))}
+        <Glass>
+          <T variant="label">National lines</T>
+          {lines.map((line) => (
+            <PressableScale key={line.number} quiet accessibilityLabel={`${line.name} ${line.number}`} onPress={() => Linking.openURL(line.href)} style={{ minHeight: 48, justifyContent: "center" }}>
+              <T variant="body">
+                {line.name} {line.number}
+              </T>
+            </PressableScale>
+          ))}
+        </Glass>
       </View>
     </Screen>
   );

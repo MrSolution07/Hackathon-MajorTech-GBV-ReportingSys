@@ -1,0 +1,166 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document: users/{uid}
+    // Fields:
+    //   - displayName: string (required, 1-80)
+    //   - createdAt: number (required)
+    // Access: the signed-in user reads and writes only their document.
+    //
+    // Collection: incidents
+    // Document: incidents/{incidentId}
+    // Fields:
+    //   - ownerId: string (required, must equal auth.uid, immutable)
+    //   - type: string (harassment|image|deepfake|doxxing|impersonation|stalking)
+    //   - platform: string (1-80)
+    //   - occurredAt: string (1-60)
+    //   - summary: string (1-2000)
+    //   - status: string (saved|prepared|shared)
+    //   - sample: bool (immutable)
+    //   - createdAt: number (immutable)
+    //   - updatedAt: number
+    // Access: owner only. List queries filter ownerId == auth.uid.
+    //
+    // Subcollection: incidents/{incidentId}/entries/{entryId}
+    // Fields:
+    //   - kind: string (words|signal|file)
+    //   - body: string (1-4000)
+    //   - signals: list (optional, max 6)
+    //   - uncertainty: string (optional, max 280)
+    //   - source: string (optional, gemini|phone)
+    //   - createdAt: number
+    // Access: owner of the parent incident. Append and delete. No edits.
+    //
+    // Subcollection: notifications/{uid}/items/{itemId}
+    // Fields:
+    //   - title: string (1-80)
+    //   - body: string (1-300)
+    //   - incidentId: string (optional)
+    //   - createdAt: number (immutable)
+    //   - read: bool
+    // Access: that user only.
+    //
+    // Collection: resources
+    // Public read is an explicit product decision: helpline facts, no personal data.
+    // Clients cannot write.
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owns(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function validUser(data) {
+      return data.keys().hasOnly(['displayName', 'createdAt'])
+        && data.displayName is string
+        && data.displayName.size() > 0
+        && data.displayName.size() <= 80
+        && data.createdAt is number;
+    }
+
+    function validIncident(data) {
+      return data.keys().hasOnly(['ownerId', 'type', 'platform', 'occurredAt', 'summary', 'status', 'sample', 'createdAt', 'updatedAt'])
+        && data.ownerId is string
+        && data.type in ['harassment', 'image', 'deepfake', 'doxxing', 'impersonation', 'stalking']
+        && data.platform is string
+        && data.platform.size() > 0
+        && data.platform.size() <= 80
+        && data.occurredAt is string
+        && data.occurredAt.size() > 0
+        && data.occurredAt.size() <= 60
+        && data.summary is string
+        && data.summary.size() > 0
+        && data.summary.size() <= 2000
+        && data.status in ['saved', 'prepared', 'shared']
+        && data.sample is bool
+        && data.createdAt is number
+        && data.updatedAt is number;
+    }
+
+    function validEntry(data) {
+      return data.keys().hasOnly(['kind', 'body', 'signals', 'uncertainty', 'source', 'createdAt'])
+        && data.kind in ['words', 'signal', 'file']
+        && data.body is string
+        && data.body.size() > 0
+        && data.body.size() <= 4000
+        && data.createdAt is number
+        && (!('signals' in data) || (data.signals is list && data.signals.size() <= 6))
+        && (!('uncertainty' in data) || (data.uncertainty is string && data.uncertainty.size() <= 280))
+        && (!('source' in data) || data.source in ['gemini', 'phone']);
+    }
+
+    function validNotice(data) {
+      return data.keys().hasOnly(['title', 'body', 'incidentId', 'createdAt', 'read'])
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 80
+        && data.body is string
+        && data.body.size() > 0
+        && data.body.size() <= 300
+        && data.createdAt is number
+        && data.read is bool
+        && (!('incidentId' in data) || data.incidentId is string);
+    }
+
+    match /users/{uid} {
+      allow read: if owns(uid);
+      allow create: if owns(uid) && validUser(request.resource.data);
+      allow update: if owns(uid)
+        && validUser(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if owns(uid);
+    }
+
+    match /incidents/{incidentId} {
+      allow read: if signedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && validIncident(request.resource.data);
+      allow update: if signedIn()
+        && resource.data.ownerId == request.auth.uid
+        && validIncident(request.resource.data)
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.sample == resource.data.sample;
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+
+      match /entries/{entryId} {
+        function parentOwner() {
+          return get(/databases/$(database)/documents/incidents/$(incidentId)).data.ownerId;
+        }
+        allow read: if signedIn() && parentOwner() == request.auth.uid;
+        allow create: if signedIn() && parentOwner() == request.auth.uid && validEntry(request.resource.data);
+        allow delete: if signedIn() && parentOwner() == request.auth.uid;
+        allow update: if false;
+      }
+    }
+
+    match /notifications/{uid}/items/{itemId} {
+      allow read: if owns(uid);
+      allow create: if owns(uid) && validNotice(request.resource.data);
+      allow update: if owns(uid)
+        && validNotice(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.title == resource.data.title
+        && request.resource.data.body == resource.data.body;
+      allow delete: if owns(uid);
+    }
+
+    // Public read requested for helpline facts only. No client writes.
+    match /resources/{resourceId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
