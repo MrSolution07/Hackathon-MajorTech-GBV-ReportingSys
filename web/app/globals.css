@@ -1,11 +1,10 @@
 :root {
-  --bg: #080a06;
-  --ink: #f2f2eb;
-  --muted: #979a90;
-  --lime: #c6f135;
-  --lime-ink: #091003;
-  --glass: rgba(18, 22, 12, 0.62);
-  --line: rgba(242, 242, 235, 0.14);
+  --bg: #0c1210;
+  --ink: #f4f1ea;
+  --muted: #c5cdc6;
+  --accent: #d7c4a3;
+  --glass: rgba(12, 18, 16, 0.55);
+  --line: rgba(244, 241, 234, 0.16);
   --sans: var(--font-sans), "Geist", sans-serif;
   --display: var(--font-display), "Bricolage Grotesque", sans-serif;
 }
@@ -22,23 +21,20 @@ body {
 }
 a { color: inherit; }
 a:focus-visible, button:focus-visible {
-  outline: 2px solid var(--lime);
+  outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
 
-.wash { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: #080a06; }
-.swoosh {
+.wash { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: var(--bg); }
+.orb {
   position: absolute;
-  width: 150%;
-  height: 78%;
-  left: -18%;
-  top: 6%;
   border-radius: 50%;
-  background: linear-gradient(115deg, #243006 0%, #5d7a12 28%, #8ea61a 46%, #8a4e1c 72%, #3a140c 100%);
-  filter: blur(18px);
-  transform: rotate(-16deg);
-  animation: drift 22s ease-in-out infinite alternate;
+  filter: blur(36px);
+  opacity: 0.85;
 }
+.orb-a { width: 58vw; height: 58vw; background: #1f6f62; left: -12vw; top: -8vh; animation: flow-a 16s ease-in-out infinite; }
+.orb-b { width: 46vw; height: 70vw; background: #8a5a32; right: -14vw; top: 8vh; animation: flow-b 22s ease-in-out infinite; }
+.orb-c { width: 42vw; height: 42vw; background: #14342c; left: 28vw; bottom: -18vh; animation: flow-c 19s ease-in-out infinite; }
 .page { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; padding: 18px 20px 80px; }
 
 .nav {
@@ -59,14 +55,14 @@ a:focus-visible, button:focus-visible {
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--display); font-weight: 700; line-height: 1.05; }
 .mark {
   width: 42px; height: 42px; border-radius: 50%;
-  background: var(--lime); color: var(--lime-ink);
+  background: var(--accent); color: #10211b;
   display: grid; place-items: center; font-weight: 800;
 }
 .nav a:not(.brand):not(.pill) { color: var(--ink); text-decoration: none; font-size: 14px; }
 .pill {
   margin-left: auto;
-  background: var(--lime);
-  color: var(--lime-ink);
+  background: #e7f2ec;
+  color: #10211b;
   text-decoration: none;
   font-weight: 700;
   border-radius: 999px;
@@ -103,7 +99,7 @@ h1 {
   letter-spacing: -0.04em;
   margin: 22px 0 16px;
 }
-h1 em { font-style: normal; color: var(--lime); }
+h1 em { font-style: normal; color: var(--accent); }
 .lede { max-width: 40rem; margin: 0 auto 28px; color: #d7d7cf; font-size: 18px; }
 .actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
 
@@ -125,11 +121,11 @@ h1 em { font-style: normal; color: var(--lime); }
 }
 .facts strong { display: block; font-family: var(--display); font-size: 40px; letter-spacing: -0.04em; line-height: 1; margin-bottom: 10px; }
 .facts p { margin: 0 0 12px; color: #d7d7cf; font-size: 15px; }
-.facts a { color: var(--lime); font-size: 13px; }
+.facts a { color: var(--accent); font-size: 13px; }
 
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
 .steps article { background: rgba(18,21,14,0.8); border: 1px solid var(--line); border-radius: 22px; padding: 18px; }
-.steps b { color: var(--lime); font-family: var(--display); font-size: 28px; }
+.steps b { color: var(--accent); font-family: var(--display); font-size: 28px; }
 .device {
   width: min(100%, 280px);
   margin: 28px auto 0;
@@ -155,13 +151,20 @@ footer { color: var(--muted); font-size: 14px; max-width: 46rem; }
   .facts, .steps { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .swoosh, .ticker-track { animation: none; }
+  .orb { animation: none; }
 }
-@keyframes drift {
-  from { transform: rotate(-16deg) translate3d(0, 0, 0); }
-  to { transform: rotate(-12deg) translate3d(0, 24px, 0); }
+@keyframes flow-a {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(16vw, 10vh, 0) scale(1.2); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
 }
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+@keyframes flow-b {
+  0% { transform: translate3d(0, 0, 0) scale(1.05); }
+  50% { transform: translate3d(-12vw, 14vh, 0) scale(0.9); }
+  100% { transform: translate3d(0, 0, 0) scale(1.05); }
+}
+@keyframes flow-c {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(8vw, -12vh, 0) scale(1.25); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
 }

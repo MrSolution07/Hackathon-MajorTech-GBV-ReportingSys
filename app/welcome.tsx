@@ -47,8 +47,7 @@ export default function Welcome() {
       <View style={{ gap: space[4], paddingTop: space[10], paddingBottom: space[6] }}>
         <T variant="label" color={colors.muted} center>South Africa</T>
         <T variant="title" center accessibilityRole="header">
-          The file still{"\n"}
-          <T variant="title" color={colors.cta}>exists.</T>
+          The file still exists on Monday.
         </T>
         <T variant="body" color={colors.muted} center>
           Save what happened. See the pattern. Choose the next step. Nothing is sent unless you send it.

@@ -15,7 +15,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${sans.variable} ${display.variable}`}>
       <body>
         <div className="wash" aria-hidden="true">
-          <div className="swoosh" />
+          <div className="orb orb-a" />
+        <div className="orb orb-b" />
+        <div className="orb orb-c" />
         </div>
         {children}
       </body>

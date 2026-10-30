@@ -8,10 +8,7 @@ const facts = [
   { place: "South Africa", figure: "43,292", text: "Domestic-violence cases withdrawn, of 169,462 opened from Jan 2024 to Mar 2025.", href: "https://pmg.org.za/committee-question/32649/", label: "Parliament" },
 ];
 
-const ticker = ["3 women a day", "38% online", "43% in one Gqeberha study", "43,292 cases withdrawn", "0800 428 428"];
-
 export default function Page() {
-  const loop = [...ticker, ...ticker];
   return (
     <main className="page">
       <nav className="nav" aria-label="Main">
@@ -27,11 +24,7 @@ export default function Page() {
 
       <header className="hero" id="top">
         <span className="loc">South Africa</span>
-        <h1>
-          The file still
-          <br />
-          <em>exists.</em>
-        </h1>
+        <h1>The file still exists on Monday.</h1>
         <p className="lede">
           Hold what happened. See the pattern in a message. Choose the next step. Nothing is sent unless she sends it.
         </p>
@@ -40,16 +33,6 @@ export default function Page() {
           <a className="ghost" href="tel:0800428428">Call the Command Centre</a>
         </div>
       </header>
-
-      <div className="ticker" aria-hidden="true">
-        <div className="ticker-track">
-          {loop.map((item, index) => (
-            <span key={item + index}>
-              <b>·</b> {item}
-            </span>
-          ))}
-        </div>
-      </div>
 
       <section className="section" id="numbers">
         <h2>What the numbers say</h2>

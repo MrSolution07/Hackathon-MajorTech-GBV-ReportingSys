@@ -6,46 +6,53 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withTiming,
+  type SharedValue,
 } from "react-native-reanimated";
 import { useApp } from "@/src/theme/Theme";
 
-export function Wash() {
-  const { colors, reduceMotion } = useApp();
-  const drift = useSharedValue(0);
-
+function useFlow(ms: number, reduce: boolean) {
+  const value = useSharedValue(0);
   useEffect(() => {
-    if (reduceMotion) {
-      drift.value = 0;
+    if (reduce) {
+      value.value = 0;
       return;
     }
-    drift.value = withRepeat(
-      withTiming(1, { duration: 28000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
-    );
-  }, [drift, reduceMotion]);
+    value.value = withRepeat(withTiming(1, { duration: ms, easing: Easing.inOut(Easing.sin) }), -1, true);
+  }, [ms, reduce, value]);
+  return value;
+}
 
-  const sun = useAnimatedStyle(() => ({
-    transform: [{ translateX: -30 + drift.value * 70 }, { translateY: drift.value * 36 }],
+function shift(value: SharedValue<number>, x: number, y: number) {
+  return useAnimatedStyle(() => ({
+    transform: [
+      { translateX: value.value * x },
+      { translateY: value.value * y },
+      { scale: 1 + value.value * 0.18 },
+    ],
   }));
-  const leaf = useAnimatedStyle(() => ({
-    transform: [{ translateX: 20 - drift.value * 50 }, { translateY: -20 + drift.value * 24 }],
-  }));
+}
+
+export function Wash() {
+  const { reduceMotion } = useApp();
+  const a = useFlow(18000, reduceMotion);
+  const b = useFlow(24000, reduceMotion);
+  const c = useFlow(20000, reduceMotion);
+  const moveA = shift(a, 140, 90);
+  const moveB = shift(b, -160, 70);
+  const moveC = shift(c, 80, -110);
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Animated.View style={[styles.blob, styles.sun, { backgroundColor: colors.sun }, sun]} />
-      <Animated.View style={[styles.blob, styles.leaf, { backgroundColor: colors.leaf }, leaf]} />
+      <Animated.View style={[styles.blob, styles.teal, moveA]} />
+      <Animated.View style={[styles.blob, styles.brass, moveB]} />
+      <Animated.View style={[styles.blob, styles.deep, moveC]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  blob: {
-    position: "absolute",
-    borderRadius: 999,
-    opacity: 0.45,
-  },
-  sun: { width: 420, height: 260, top: 40, right: -160, transform: [{ rotate: "-18deg" }] },
-  leaf: { width: 280, height: 180, bottom: -40, left: -80 },
+  blob: { position: "absolute", borderRadius: 999, opacity: 0.55 },
+  teal: { width: 340, height: 340, backgroundColor: "#1f6f62", top: -80, left: -60 },
+  brass: { width: 300, height: 420, backgroundColor: "#8a5a32", top: 80, right: -100 },
+  deep: { width: 280, height: 280, backgroundColor: "#16382f", bottom: -80, left: 40 },
 });
