@@ -13,5 +13,11 @@
     "providers": {
       "emailPassword": true
     }
+  },
+  "emulators": {
+    "firestore": {
+      "port": 8080
+    },
+    "singleProjectMode": true
   }
 }

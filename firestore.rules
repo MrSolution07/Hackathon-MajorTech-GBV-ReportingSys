@@ -57,6 +57,11 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    // Set only with the Admin SDK. A client cannot grant this claim.
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
     function validUser(data) {
       return data.keys().hasOnly(['displayName', 'createdAt'])
         && data.displayName is string
@@ -66,7 +71,7 @@ service cloud.firestore {
     }
 
     function validIncident(data) {
-      return data.keys().hasOnly(['ownerId', 'type', 'platform', 'occurredAt', 'summary', 'status', 'sample', 'createdAt', 'updatedAt'])
+      return data.keys().hasOnly(['ownerId', 'type', 'platform', 'occurredAt', 'summary', 'status', 'sample', 'createdAt', 'updatedAt', 'consentAt', 'consentVersion'])
         && data.ownerId is string
         && data.type in ['harassment', 'image', 'deepfake', 'doxxing', 'impersonation', 'stalking']
         && data.platform is string
@@ -81,7 +86,9 @@ service cloud.firestore {
         && data.status in ['saved', 'prepared', 'shared']
         && data.sample is bool
         && data.createdAt is number
-        && data.updatedAt is number;
+        && data.updatedAt is number
+        && (!('consentAt' in data) || data.consentAt is number)
+        && (!('consentVersion' in data) || (data.consentVersion is string && data.consentVersion.size() > 0 && data.consentVersion.size() <= 40));
     }
 
     function validEntry(data) {
@@ -119,7 +126,8 @@ service cloud.firestore {
     }
 
     match /incidents/{incidentId} {
-      allow read: if signedIn() && resource.data.ownerId == request.auth.uid;
+      // Owner update and delete stay so the app can change status and delete an account.
+      allow read: if isAdmin() || (signedIn() && resource.data.ownerId == request.auth.uid);
       allow create: if signedIn()
         && request.resource.data.ownerId == request.auth.uid
         && validIncident(request.resource.data);
@@ -135,7 +143,7 @@ service cloud.firestore {
         function parentOwner() {
           return get(/databases/$(database)/documents/incidents/$(incidentId)).data.ownerId;
         }
-        allow read: if signedIn() && parentOwner() == request.auth.uid;
+        allow read: if isAdmin() || (signedIn() && parentOwner() == request.auth.uid);
         allow create: if signedIn() && parentOwner() == request.auth.uid && validEntry(request.resource.data);
         allow delete: if signedIn() && parentOwner() == request.auth.uid;
         allow update: if false;
@@ -153,10 +161,25 @@ service cloud.firestore {
       allow delete: if owns(uid);
     }
 
-    // Public read requested for helpline facts only. No client writes.
+    // Helpline facts only. Read is public. Write is closed.
     match /resources/{resourceId} {
       allow read: if true;
       allow write: if false;
+    }
+
+    // Contact messages, demo requests, audit log and rate limits are server-only.
+    // The Admin SDK bypasses these rules. Clients, including admin claims, cannot touch them.
+    match /contacts/{id} {
+      allow read, write: if false;
+    }
+    match /demoRequests/{id} {
+      allow read, write: if false;
+    }
+    match /auditLog/{id} {
+      allow read, write: if false;
+    }
+    match /rateLimits/{id} {
+      allow read, write: if false;
     }
 
     match /{document=**} {

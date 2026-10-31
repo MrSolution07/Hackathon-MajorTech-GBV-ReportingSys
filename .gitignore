@@ -21,3 +21,6 @@ web/.next/
 .vercel
 web/.vercel
 npm-debug.log*
+firebase-debug.log
+firestore-debug.log
+web/tsconfig.tsbuildinfo
