@@ -1,4 +1,6 @@
 rules_version = '2';
+// Evidence stays private to the signed-in owner. Admin views use short-lived signed URLs from the server.
+// Follow-up: strip EXIF and GPS in the app before upload. File names are timestamps, not narrative.
 service firebase.storage {
   match /b/{bucket}/o {
     match /users/{uid}/{allPaths=**} {

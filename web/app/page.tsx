@@ -1,3 +1,6 @@
+import { ContactSection } from "@/components/ContactSection";
+import { DemoSection } from "@/components/DemoSection";
+
 const facts = [
   { place: "World", figure: "1 in 3", text: "Women, in their lifetime, have faced physical or sexual violence.", href: "https://www.who.int/news-room/fact-sheets/detail/violence-against-women", label: "WHO" },
   { place: "World", figure: "38%", text: "Of women online had experienced online violence. 85% had witnessed it.", href: "https://www.unwomen.org/en/articles/faqs/digital-abuse-trolling-stalking-and-other-forms-of-technology-facilitated-violence-against-women", label: "UN Women" },
@@ -18,7 +21,9 @@ export default function Page() {
         </a>
         <a href="#numbers">Numbers</a>
         <a href="#how">How</a>
-        <a href="#lines">Helplines</a>
+        <a href="#lines">Safety</a>
+        <a href="#demo">Demo</a>
+        <a href="#contact">Contact</a>
         <a className="pill" href="tel:0800428428">0800 428 428</a>
       </nav>
 
@@ -88,6 +93,9 @@ export default function Page() {
           <a href="tel:116">Childline 116</a>
         </div>
       </section>
+
+      <DemoSection />
+      <ContactSection />
 
       <footer>
         April to December 2024: 2,884 women murdered, 31,303 rapes, 75,944 domestic-violence crimes against women.{" "}
